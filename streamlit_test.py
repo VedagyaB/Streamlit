@@ -1,10 +1,11 @@
 import streamlit as st
 import cv2
 import os
+import numpy as np
 
-st.set_page_config(layout="wide", page_title="image_dropdown")
+st.set_page_config(layout="wide", page_title="Image Grid")
 
-st.title("Drop Down")
+st.title("Image Grid")
 
 def load_image(file_path):
     if os.path.exists(file_path):
@@ -19,20 +20,48 @@ def load_image(file_path):
         st.error(f"File not found: {file_path}")
         return None
 
-# Define image paths and captions
-images_info = {
-    "image 0": "3_HUAWEI-NOVA-LITE_S.jpg",
-    "image 1": "2_XIAOMI-PROCOFONE-F1_S.jpg",
-    "image 2": "1_XIAOMI-PROCOFONE-F1_S.jpg",
-    "image 3": "0_IPHONE-SE_S.JPG"
-}
+def get_images_from_directory(directory):
+    images_info = {}
+    if os.path.exists(directory):
+        for filename in os.listdir(directory):
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                file_path = os.path.join(directory, filename)
+                caption = os.path.splitext(filename)[0]
+                images_info[caption] = file_path
+    else:
+        st.error(f"Directory not found: {directory}")
+    return images_info
 
-# Create the selectbox with image captions
-selected_caption = st.selectbox(label="Choose image", options=list(images_info.keys()))
+# Function to select directories using multiselect
+def select_directories():
+    # List all directories in current working directory
+    directories = [name for name in os.listdir() if os.path.isdir(name)]
+    selected_directories = st.multiselect("Select directories", directories)
+    return selected_directories
 
-# Load and display the selected image
-if selected_caption:
-    selected_image_path = images_info[selected_caption]
-    selected_image = load_image(selected_image_path)
-    if selected_image is not None:
-        st.image(selected_image, caption=selected_caption, width=300)
+# Get selected directories from dropdown
+selected_directories = select_directories()
+
+# Display images from selected directories in a matrix layout
+if selected_directories:
+    for directory in selected_directories:
+        st.header(f"Images in directory '{directory}':")
+        images_info = get_images_from_directory(directory)
+        
+        if images_info:
+            num_columns = int(np.sqrt(len(images_info)))  # Adjust columns based on number of images
+            
+            # Create the grid
+            rows = len(images_info) // num_columns + (len(images_info) % num_columns > 0)
+            for row in range(rows):
+                cols = st.columns(num_columns)
+                for col_index in range(num_columns):
+                    image_index = row * num_columns + col_index
+                    if image_index < len(images_info):
+                        image = load_image(list(images_info.values())[image_index])
+                        if image is not None:
+                            cols[col_index].image(image, use_column_width=True)
+        else:
+            st.error(f"No images found in directory '{directory}'.")
+else:
+    st.warning("Please select one or more directories from the dropdown.")
