@@ -67,7 +67,7 @@ selected_directories = select_directories()
 #             st.error(f"No images found in directory '{directory}'.")
 
     # Select issues to analyze with CleanVision
-issues = {"blurry", "near_duplicates"}
+issues = {"blurry", "near_duplicates","exact_duplicate"}
 selected_issues = st.multiselect("Select issues", issues)
 
 if selected_issues:
